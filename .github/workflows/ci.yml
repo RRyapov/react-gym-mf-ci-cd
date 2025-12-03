@@ -55,6 +55,8 @@ jobs:
       - name: Run ESLint
         run: npm run lint || echo "Lint script not found, skipping..."
         continue-on-error: true
+        env:
+          ESLINT_USE_FLAT_CONFIG: false
       
       # Шаг 5: Проверка типов TypeScript
       - name: TypeScript type check
