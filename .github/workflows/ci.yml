@@ -1,0 +1,105 @@
+# ============================================
+# ПЕРВИЧНЫЙ CI ПАЙПЛАЙН
+# Быстрые проверки для Pull Requests
+# ============================================
+
+name: CI - Quick Checks
+
+# Когда запускается пайплайн
+on:
+  # При создании или обновлении Pull Request
+  pull_request:
+    branches: [ main, develop ]
+  
+  # При push в feature-ветки (опционально)
+  push:
+    branches-ignore:
+      - main
+      - develop
+
+# Разрешаем запуск из форков (для open source)
+permissions:
+  contents: read
+  pull-requests: write
+
+# ============================================
+# JOBS (Задачи)
+# ============================================
+
+jobs:
+  # ============================================
+  # JOB 1: Проверка линтинга и типов
+  # ============================================
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Шаг 1: Получение кода из репозитория
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Шаг 2: Настройка Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      
+      # Шаг 3: Установка зависимостей
+      - name: Install dependencies
+        run: npm ci
+      
+      # Шаг 4: Проверка линтинга (если есть скрипт)
+      - name: Run ESLint
+        run: npm run lint || echo "Lint script not found, skipping..."
+        continue-on-error: true
+      
+      # Шаг 5: Проверка типов TypeScript
+      - name: TypeScript type check
+        run: npm run typeCheck
+
+  # ============================================
+  # JOB 2: Сборка проекта
+  # ============================================
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      # Сборка проекта
+      - name: Build application
+        run: npm run build.prod
+      
+      # Проверка, что build папка создана
+      - name: Verify build output
+        run: |
+          if [ ! -d "build" ]; then
+            echo "Build directory not found!"
+            exit 1
+          fi
+          echo "Build successful! Files:"
+          ls -la build/
+
+# ============================================
+# Комментарии:
+# ============================================
+# 1. Все jobs запускаются параллельно для скорости
+# 2. continue-on-error: true - позволяет продолжить, если lint скрипта нет
+# 3. cache: 'npm' - кеширует node_modules для ускорения
+# 4. Этот пайплайн НЕ создает Docker-образы (только проверки)
+

@@ -1,0 +1,66 @@
+# ============================================
+# Docker Compose для локальной разработки
+# ============================================
+# Используйте для запуска всех микрофронтендов одновременно
+
+version: '3.8'
+
+services:
+  # ============================================
+  # Programs микрофронтенд
+  # ============================================
+  programs:
+    build:
+      context: ./rg-mf-programs
+      dockerfile: Dockerfile
+    container_name: rg-mf-programs
+    ports:
+      - "3001:80"  # Порт хоста:порт контейнера
+    restart: unless-stopped
+    networks:
+      - react-gym-network
+
+  # ============================================
+  # Services микрофронтенд
+  # ============================================
+  services-app:
+    build:
+      context: ./rg-mf-services
+      dockerfile: Dockerfile
+    container_name: rg-mf-services
+    ports:
+      - "3002:80"
+    restart: unless-stopped
+    networks:
+      - react-gym-network
+
+# ============================================
+# Сеть для связи между контейнерами
+# ============================================
+networks:
+  react-gym-network:
+    driver: bridge
+
+# ============================================
+# Команды для использования:
+# ============================================
+# Сборка и запуск:
+#   docker-compose up --build
+#
+# Запуск в фоне:
+#   docker-compose up -d
+#
+# Остановка:
+#   docker-compose down
+#
+# Просмотр логов:
+#   docker-compose logs -f
+#
+# Пересборка одного сервиса:
+#   docker-compose up --build programs
+#   docker-compose up --build services-app
+#
+# Доступ к приложениям:
+#   Programs: http://localhost:3001
+#   Services: http://localhost:3002
+

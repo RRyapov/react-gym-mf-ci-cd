@@ -1,0 +1,175 @@
+# ============================================
+# ГЕНЕРАЛЬНЫЙ CD ПАЙПЛАЙН
+# Полная сборка, Docker и развертывание
+# ============================================
+
+name: CD - Full Pipeline
+
+# Когда запускается пайплайн
+on:
+  # После merge в main ветку
+  push:
+    branches: [ main ]
+  
+  # При создании тега (для релизов)
+  push:
+    tags:
+      - 'v*'
+  
+  # Ручной запуск из GitHub UI
+  workflow_dispatch:
+
+# Разрешения для работы с Docker и реестром
+permissions:
+  contents: read
+  packages: write
+
+# ============================================
+# ПЕРЕМЕННЫЕ
+# ============================================
+env:
+  # Имя реестра (GitHub Container Registry)
+  REGISTRY: ghcr.io
+  # Имя вашего GitHub аккаунта/организации (автоматически из репозитория)
+  IMAGE_PREFIX: ${{ github.repository_owner }}
+  # Имя образа (из package.json: remotePrograms)
+  IMAGE_NAME: react-gym-mf-programs
+
+# ============================================
+# JOBS
+# ============================================
+
+jobs:
+  # ============================================
+  # JOB 1: CI проверки (повторяем из ci.yml)
+  # ============================================
+  ci-checks:
+    name: Run CI Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: TypeScript type check
+        run: npm run typeCheck
+      
+      - name: Build application
+        run: npm run build.prod
+      
+      - name: Verify build output
+        run: |
+          if [ ! -d "build" ]; then
+            echo "Build directory not found!"
+            exit 1
+          fi
+          echo "Build successful! Files:"
+          ls -la build/
+
+  # ============================================
+  # JOB 2: Сборка и публикация Docker-образа
+  # ============================================
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: ci-checks
+    
+    # Только если CI проверки прошли успешно
+    if: success()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Настройка Docker Buildx (для multi-platform сборки)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # Логин в GitHub Container Registry
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Определение тегов для образа
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      # Сборка и публикация образа
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================
+  # JOB 3: Развертывание (пример)
+  # ============================================
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    
+    # Только для main ветки
+    if: github.ref == 'refs/heads/main' && success()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Пример развертывания на сервер
+      # Раскомментируйте и настройте под вашу инфраструктуру
+      
+      # - name: Deploy to server
+      #   uses: appleboy/ssh-action@master
+      #   with:
+      #     host: ${{ secrets.SERVER_HOST }}
+      #     username: ${{ secrets.SERVER_USER }}
+      #     key: ${{ secrets.SSH_PRIVATE_KEY }}
+      #     script: |
+      #       docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.IMAGE_NAME }}:latest
+      #       docker-compose up -d
+      
+      - name: Deployment info
+        run: |
+          echo "🚀 Deployment would happen here"
+          echo "Image built:"
+          echo "  - ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ env.IMAGE_NAME }}:latest"
+
+# ============================================
+# Комментарии:
+# ============================================
+# 1. needs: - определяет зависимости между jobs
+# 2. if: success() - запускается только если предыдущие jobs успешны
+# 3. GITHUB_TOKEN - автоматически создается GitHub Actions
+# 4. cache-from/cache-to - ускоряет сборку Docker-образов
+# 5. Для развертывания настройте secrets в GitHub Settings
+# 6. context: . - указывает на корневую директорию проекта
+
