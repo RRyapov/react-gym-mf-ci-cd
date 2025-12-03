@@ -1,6 +1,6 @@
 module.exports = {
 	root: true,
-	extends: ["@rshbintech.rprul.ecp/eslint-config/fsd"],
+	extends: ["./fsd"],
 	parser: "@typescript-eslint/parser",
 	parserOptions: {
 		project: true,
