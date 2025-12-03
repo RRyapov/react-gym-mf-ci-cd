@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { FC } from "react";
+import { type FC } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import ProgramsPage from "@pages/ProgramPage";
@@ -13,19 +13,17 @@ const queryClient = new QueryClient({
   },
 });
 
-const ProgramsMF: FC = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="programs" element={<ProgramsPage />} />
-        </Routes>
-        <Routes>
-          <Route path="programs/:id" element={<DetailedProgramPage />} />
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
-  );
-};
+const ProgramsMF: FC = () => (
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
+      <Routes>
+        <Route path="programs" element={<ProgramsPage />} />
+      </Routes>
+      <Routes>
+        <Route path="programs/:id" element={<DetailedProgramPage />} />
+      </Routes>
+    </BrowserRouter>
+  </QueryClientProvider>
+);
 
 export default ProgramsMF;

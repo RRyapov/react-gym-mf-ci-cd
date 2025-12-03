@@ -1,4 +1,4 @@
-import { TrainingProgramType } from "./TrainingProgram";
+import { type TrainingProgramType } from "./TrainingProgram";
 
 export interface ProgramsResponse {
   programs: TrainingProgramType[];

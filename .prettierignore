@@ -1,0 +1,6 @@
+*.md
+build
+node_modules
+.eslintrc.js
+*.config.js
+*.config.ts

@@ -9,19 +9,19 @@ export const Container = styled.div`
   padding: 0px 55px;
 
   background-size: cover;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0, 0, 0, 0.45);
 `;
 
 export const MainBackground = styled.div`
-  background: url("https://i.postimg.cc/7YJSftWs/background-blur.png") no-repeat center center fixed;
+  background: url("https://i.postimg.cc/7YJSftWs/background-blur.png") no-repeat
+    center center fixed;
 
   width: 100%;
-    background-size: cover;
+  background-size: cover;
   display: flex;
   justify-content: center;
   flex-direction: column;
 `;
-
 
 export const Footer = styled.div`
   margin-bottom: auto;

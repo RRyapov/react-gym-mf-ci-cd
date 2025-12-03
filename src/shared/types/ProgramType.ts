@@ -9,6 +9,6 @@ export type ProgramType = {
   age: string;
   level: string;
   result: number;
-  onLearnMore: () => void
+  onLearnMore: () => void;
   navigate: (path: string) => void;
 };
