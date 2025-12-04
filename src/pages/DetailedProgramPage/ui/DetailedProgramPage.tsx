@@ -1,10 +1,11 @@
 import { useState, type FC } from "react";
 import { useParams } from "react-router-dom";
 
-import { type ProgramType, useQueryPrograms } from "@entities/trainingProgram";
+import { useQueryPrograms } from "@entities/trainingProgram";
 
 import { BuyItemLinks, BuyItemType } from "@shared/types/types";
 import { BuyItemFrame } from "@shared/ui/BuyItemFrame";
+import { type ProgramType } from "@shared/types/ProgramType";
 
 export const DetailedProgramPage: FC = () => {
   const { data: requestedPrograms, isLoading, isError } = useQueryPrograms();
